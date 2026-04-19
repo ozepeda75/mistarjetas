@@ -27,7 +27,7 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not(.light-forced){
     --color-text-primary:#f0f0f0;
     --color-text-secondary:#bbb;
     --color-text-tertiary:#777;
@@ -38,6 +38,28 @@
     --color-border-primary:#636366;
   }
 }
+.dark-forced{
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#bbb;
+  --color-text-tertiary:#777;
+  --color-background-primary:#1c1c1e;
+  --color-background-secondary:#2c2c2e;
+  --color-border-tertiary:#3a3a3c;
+  --color-border-secondary:#48484a;
+  --color-border-primary:#636366;
+}
+.dark-forced{background:#2c2c2e}
+.light-forced{
+  --color-text-primary:#111;
+  --color-text-secondary:#444;
+  --color-text-tertiary:#888;
+  --color-background-primary:#fff;
+  --color-background-secondary:#f5f5f7;
+  --color-border-tertiary:#e0e0e0;
+  --color-border-secondary:#d0d0d0;
+  --color-border-primary:#999;
+}
+.light-forced{background:#f5f5f7}
 html,body{height:100%;overscroll-behavior:none}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;
@@ -288,6 +310,7 @@ body.compact-mode .alert-box{display:none!important}
         <button class="vt-btn" id="btn-compact-view" onclick="setView('compact')">&#9776;</button>
         <button class="vt-btn" id="btn-card-view" onclick="setView('card')">&#9646;&#9646;</button>
       </div>
+      <button class="vt-btn" id="btn-dark-toggle" onclick="toggleDark()" style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:5px 10px;font-size:15px;line-height:1" title="Cambiar modo claro/oscuro">&#9790;</button>
       <div class="header-dot"></div>
     </div>
   </div>
@@ -306,7 +329,7 @@ body.compact-mode .alert-box{display:none!important}
         <span class="alert-icon">&#128337;</span>
         <span class="alert-title">Pr&#243;ximos 3 pagos</span>
       </div>
-      <button class="alert-reset" onclick="resetPaid()">Limpiar &#10003;</button>
+      <button class="alert-reset" onclick="resetPaid()" title="Desmarcar todos">&#9003;</button>
     </div>
     <div class="alert-items" id="alert-items"></div>
   </div>
@@ -501,9 +524,26 @@ var cards=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')||defaultCards;
 cards=cards.map(function(c){return Object.assign({network:'',notes:'',promos:'',financiamiento:'',membresia:'',mesCargo:'',mesPago:'',lealtad:'',extranjero:''},c);});
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(cards));}
 
+var darkPref=localStorage.getItem('cc_dark')||'auto';
+function applyDark(){
+  var b=document.body;
+  b.classList.remove('dark-forced','light-forced');
+  if(darkPref==='dark')b.classList.add('dark-forced');
+  else if(darkPref==='light')b.classList.add('light-forced');
+  var btn=document.getElementById('btn-dark-toggle');
+  if(btn)btn.innerHTML=darkPref==='dark'?'&#9728;':darkPref==='light'?'&#9790;':'&#9681;';
+}
+function toggleDark(){
+  if(darkPref==='auto')darkPref='dark';
+  else if(darkPref==='dark')darkPref='light';
+  else darkPref='auto';
+  localStorage.setItem('cc_dark',darkPref);
+  applyDark();
+}
+applyDark();
+
 var savedView=localStorage.getItem('cc_view')||'compact';
 setView(savedView);
-
 function exportar(){
   var data=JSON.stringify({version:1,fecha:new Date().toISOString().slice(0,10),tarjetas:cards},null,2);
   var blob=new Blob([data],{type:'application/json'});var url=URL.createObjectURL(blob);
@@ -663,8 +703,8 @@ function backHTML(c){
     +'<div class="back-row-2col"><div class="back-row"><div class="back-label">Meses membres\u00eda</div><div class="back-value">'+ml+'</div></div>'
     +'<div class="back-row"><div class="back-label">Extranjero</div><div class="back-value">'+(c.extranjero||empty)+'</div></div></div>'
     +'<div class="back-divider"></div>'
-    +'<div class="back-row-3col">'
     +'<div class="back-row"><div class="back-label">Notas</div><div class="back-value">'+(c.notes?c.notes.replace(/\n/g,'<br>'):'<span class="back-empty-val">Sin notas</span>')+'</div></div>'
+    +'<div class="back-row-2col">'
     +'<div class="back-row"><div class="back-label">Financiamiento</div><div class="back-value">'+(c.financiamiento?c.financiamiento.replace(/\n/g,'<br>'):'<span class="back-empty-val">&#8212;</span>')+'</div></div>'
     +'<div class="back-row"><div class="back-label">Promociones</div><div class="back-value">'+(c.promos?c.promos.replace(/\n/g,'<br>'):'<span class="back-empty-val">Sin promos</span>')+'</div></div>'
     +'</div>'

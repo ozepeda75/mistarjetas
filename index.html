@@ -107,13 +107,12 @@ body{
 .card-wrapper{margin-bottom:14px}
 .card-wrapper:last-child{margin-bottom:0}
 
-/* flip-wrapper necesita position:relative y altura explícita para que
-   en iOS no colapse cuando las tarjetas están en absolute */
-.flip-wrapper{perspective:1000px;cursor:pointer;position:relative;width:100%}
-.flip-inner{position:relative;width:100%;transform-style:preserve-3d;transition:transform .5s ease;min-height:134px}
+/* flip — frente define la altura natural, reverso se expande al voltear */
+.flip-wrapper{perspective:1000px;cursor:pointer;width:100%}
+.flip-inner{position:relative;width:100%;transform-style:preserve-3d;transition:transform .5s ease}
 .flip-inner.flipped{transform:rotateY(180deg)}
-.flip-front,.flip-back{width:100%;min-height:134px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:16px 16px 14px;border:0.5px solid transparent;display:flex;flex-direction:column;gap:10px}
-.flip-back{position:absolute;top:0;left:0;right:0;transform:rotateY(180deg);gap:0}
+.flip-front{width:100%;min-height:130px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:16px 16px 14px;border:0.5px solid transparent;display:flex;flex-direction:column;gap:10px}
+.flip-back{position:absolute;top:0;left:0;width:100%;min-height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:16px 16px 14px;border:0.5px solid transparent;display:flex;flex-direction:column;gap:0;transform:rotateY(180deg)}
 .theme-default .flip-front,.theme-default .flip-back{background:var(--color-background-primary);border-color:var(--color-border-tertiary)}
 .theme-platinum .flip-front,.theme-platinum .flip-back{background:linear-gradient(135deg,#C8C8C8 0%,#E8E8E8 40%,#A8A8A8 100%);border-color:#999}
 .theme-black .flip-front,.theme-black .flip-back{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 50%,#111 100%);border-color:#444}
@@ -573,9 +572,20 @@ function flipCard(id,event){
   syncHeight(id);
 }
 function syncHeight(id){
-  var w=document.getElementById('flip-wrapper-'+id),f=document.getElementById('flip-front-'+id),b=document.getElementById('flip-back-'+id);
-  if(!w||!f||!b)return;
-  w.style.height=(flipped[id]?b.scrollHeight:f.scrollHeight)+'px';
+  var inner=document.getElementById('flip-inner-'+id);
+  var f=document.getElementById('flip-front-'+id);
+  var b=document.getElementById('flip-back-'+id);
+  if(!inner||!f||!b)return;
+  if(flipped[id]){
+    // Al voltear: medir el reverso. Como es absolute necesitamos height:auto temporal
+    inner.style.height='auto';
+    // Dar un tick para que el browser calcule, luego fijar
+    setTimeout(function(){
+      inner.style.height=Math.max(b.scrollHeight,130)+'px';
+    },10);
+  } else {
+    inner.style.height=Math.max(f.scrollHeight,130)+'px';
+  }
 }
 function dayLabel(d){if(d===0)return 'Hoy';if(d===1)return 'Ma\u00f1ana';return d+' d\u00edas';}
 function dayClass(d){if(d===0)return 'days-hoy';if(d<=3)return 'days-critical';if(d<=10)return 'days-warning';return 'days-normal';}
@@ -734,7 +744,7 @@ function render(){
   for(var i=0;i<list.length;i++){
     var c=list[i],uc=urgCorte(c.daysToCorte),up=urgPago(c.daysToPago);
     var cc=colors[uc],pc=colors[up],th=getTheme(c.bank),ttt=textByTheme[th];
-    var star=(uc==='g'&&up==='g')?'<span class="star" style="color:'+starColor(th)+'">&#9733;</span>':'';
+    var star=(c.daysToPago>=50)?'<span class="star" style="color:'+starColor(th)+'">&#9733;</span>':'';
     var flipCol=th==='theme-default'?'var(--color-text-tertiary)':'rgba(255,255,255,.25)';
     html+='<div class="card-wrapper">'
       +'<div class="flip-wrapper '+th+'" id="flip-wrapper-'+c.id+'" onclick="flipCard('+c.id+',event)" style="position:relative">'
@@ -756,7 +766,7 @@ function render(){
   for(var k=0;k<list.length;k++){
     var c=list[k],uc2=urgCorte(c.daysToCorte),up2=urgPago(c.daysToPago);
     var cc2=colors[uc2],pc2=colors[up2],th2=getTheme(c.bank);
-    var star2=(uc2==='g'&&up2==='g')?'\u2605 ':'';
+    var star2=(c.daysToPago>=50)?'\u2605 ':'';
     // Solo mostrar fecha de pago en la sublínea (más compacto)
     chtml+='<div class="compact-item">'
       +'<div class="compact-theme-bar" style="background:'+getThemeBarColor(th2)+'"></div>'

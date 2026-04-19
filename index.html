@@ -379,11 +379,9 @@ body.compact-mode .alert-box{display:none!important}
         <div class="a-section-label">Lealtad y detalles</div>
         <div class="afield"><label>Lealtad</label><select id="inp-lealtad"></select></div>
         <div class="afield"><label>Extranjero</label><select id="inp-extranjero"></select></div>
-        <div class="notes-row">
-          <div class="afield"><label>Notas</label><textarea id="inp-notes" placeholder="Beneficios, accesos..."></textarea></div>
-          <div class="afield"><label>Financiamiento</label><textarea id="inp-financiamiento" placeholder="MSI, tasas..."></textarea></div>
-          <div class="afield"><label>Promociones</label><textarea id="inp-promos" placeholder="Ofertas activas..."></textarea></div>
-        </div>
+        <div class="afield"><label>Notas</label><textarea id="inp-notes" placeholder="Beneficios, accesos..."></textarea></div>
+        <div class="afield"><label>Financiamiento</label><textarea id="inp-financiamiento" placeholder="MSI, tasas..."></textarea></div>
+        <div class="afield"><label>Promociones</label><textarea id="inp-promos" placeholder="Ofertas activas..."></textarea></div>
         <div class="form-msg" id="form-msg"></div>
         <button class="btn-add" onclick="addCard()">Agregar</button>
       </div>
@@ -463,11 +461,9 @@ body.compact-mode .alert-box{display:none!important}
     <div class="field-group">
       <div class="mfield"><label>Lealtad</label><select id="edit-lealtad"></select></div>
       <div class="mfield"><label>Extranjero</label><select id="edit-extranjero"></select></div>
-      <div class="mrow3">
-        <div class="mfield"><label>Notas</label><textarea id="edit-notes" placeholder="Beneficios, accesos..."></textarea></div>
-        <div class="mfield"><label>Financiamiento</label><textarea id="edit-financiamiento" placeholder="MSI, tasas..."></textarea></div>
-        <div class="mfield"><label>Promociones</label><textarea id="edit-promos" placeholder="Ofertas activas..."></textarea></div>
-      </div>
+      <div class="mfield"><label>Notas</label><textarea id="edit-notes" placeholder="Beneficios, accesos..."></textarea></div>
+      <div class="mfield"><label>Financiamiento</label><textarea id="edit-financiamiento" placeholder="MSI, tasas..."></textarea></div>
+      <div class="mfield"><label>Promociones</label><textarea id="edit-promos" placeholder="Ofertas activas..."></textarea></div>
     </div>
     <div class="modal-msg" id="edit-msg"></div>
     <div class="modal-btns">
@@ -696,7 +692,7 @@ function backHTML(c){
   var mesLine=[];
   if(c.mesCargo)mesLine.push('Cargo: '+c.mesCargo);
   if(c.mesPago)mesLine.push('Pago: '+c.mesPago);
-  var ml=mesLine.length?mesLine.join('  \u00b7  '):empty;
+  var ml=mesLine.length?mesLine.join('<br>'):empty;
   return '<div class="back-content">'
     +'<div class="back-row-2col"><div class="back-row"><div class="back-label">Membres\u00eda</div><div class="back-value">'+(c.membresia||empty)+'</div></div>'
     +'<div class="back-row"><div class="back-label">Lealtad</div><div class="back-value">'+(c.lealtad||empty)+'</div></div></div>'

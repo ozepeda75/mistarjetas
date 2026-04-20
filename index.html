@@ -91,14 +91,22 @@ body{
 .network-logo-today{position:absolute;bottom:14px;right:16px;display:flex;align-items:center}
 
 /* ALERTA */
-.alert-box{display:none;border-radius:12px;padding:12px 14px;margin-bottom:1rem;background:linear-gradient(135deg,#0c2d54 0%,#185FA5 100%);border:1px solid #2563b0}
+.alert-box{display:none;border-radius:12px;margin-bottom:1rem;background:linear-gradient(135deg,#0c2d54 0%,#185FA5 100%);border:1px solid #2563b0;overflow:hidden}
 .alert-box.visible{display:block}
-.alert-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.alert-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.alert-header:active{opacity:.85}
 .alert-header-left{display:flex;align-items:center;gap:8px}
 .alert-icon{font-size:15px;color:#B5D4F4}
 .alert-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#B5D4F4}
-.alert-reset{font-size:11px;color:rgba(181,212,244,.6);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline}
-.alert-items{display:flex;flex-direction:column;gap:5px}
+.alert-counter{font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.15);color:#E6F1FB;margin-left:4px}
+.alert-header-right{display:flex;align-items:center;gap:8px}
+.alert-reset{font-size:16px;color:rgba(181,212,244,.6);cursor:pointer;background:none;border:none;padding:0;line-height:1}
+.alert-reset:active{color:#B5D4F4}
+.alert-chevron{font-size:12px;color:rgba(181,212,244,.6);transition:transform .25s}
+.alert-box.open .alert-chevron{transform:rotate(180deg)}
+.alert-body{display:none;padding:0 14px 12px}
+.alert-box.open .alert-body{display:block}
+.alert-items{display:flex;flex-direction:column;gap:5px;max-height:201px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:2px}
 .alert-item{display:flex;align-items:center;background:rgba(0,0,0,.25);border-radius:8px;padding:9px 12px;gap:10px;transition:opacity .2s}
 .alert-item.paid{opacity:.45}
 .alert-check{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
@@ -324,14 +332,20 @@ body.compact-mode .alert-box{display:none!important}
   </div>
 
   <div class="alert-box" id="alert-box">
-    <div class="alert-header">
+    <div class="alert-header" onclick="toggleAlert()">
       <div class="alert-header-left">
         <span class="alert-icon">&#128337;</span>
-        <span class="alert-title">Pr&#243;ximos 3 pagos</span>
+        <span class="alert-title">Pr&#243;ximos pagos</span>
+        <span class="alert-counter" id="alert-counter"></span>
       </div>
-      <button class="alert-reset" onclick="resetPaid()" title="Desmarcar todos">&#9003;</button>
+      <div class="alert-header-right">
+        <button class="alert-reset" onclick="event.stopPropagation();resetPaid()" title="Desmarcar todos">&#9003;</button>
+        <span class="alert-chevron">&#8744;</span>
+      </div>
     </div>
-    <div class="alert-items" id="alert-items"></div>
+    <div class="alert-body">
+      <div class="alert-items" id="alert-items"></div>
+    </div>
   </div>
 
   <div class="section-bar">
@@ -560,6 +574,14 @@ function importar(event){
 }
 function showBackupMsg(t,e){var el=document.getElementById('backup-msg');el.textContent=t;el.className='backup-msg'+(e?' error':'');el.style.display='block';setTimeout(function(){el.style.display='none';},4000);}
 
+var alertOpen=localStorage.getItem('cc_alert_open')!=='false';
+function toggleAlert(){
+  alertOpen=!alertOpen;
+  localStorage.setItem('cc_alert_open',alertOpen);
+  var box=document.getElementById('alert-box');
+  if(alertOpen)box.classList.add('open');
+  else box.classList.remove('open');
+}
 function togglePaid(id){var k=String(id);if(paid[k])delete paid[k];else paid[k]=todayMonth;savePaid();renderAlert(lastList);}
 function resetPaid(){paid={};savePaid();renderAlert(lastList);}
 
@@ -634,12 +656,19 @@ function renderAlert(list){
   candidates.sort(function(a,b){return a.daysLeft-b.daysLeft;});
   var notPaid=[],isPaid=[];
   for(var j=0;j<candidates.length;j++){if(paid[String(candidates[j].card.id)])isPaid.push(candidates[j]);else notPaid.push(candidates[j]);}
-  var shown=[];
-  for(var a=0;a<notPaid.length&&shown.length<3;a++)shown.push(notPaid[a]);
-  for(var b=0;b<isPaid.length&&shown.length<3;b++)shown.push(isPaid[b]);
-  var box=document.getElementById('alert-box'),itemsEl=document.getElementById('alert-items');
+  // Mostrar todas: pendientes primero, pagadas al final
+  var shown=notPaid.concat(isPaid);
+  var box=document.getElementById('alert-box');
+  var itemsEl=document.getElementById('alert-items');
+  var counterEl=document.getElementById('alert-counter');
   if(!shown.length){box.className='alert-box';return;}
-  box.className='alert-box visible';
+  box.className='alert-box visible'+(alertOpen?' open':'');
+  // Contador: pendientes / total
+  var pendientes=notPaid.length,total=shown.length;
+  if(counterEl){
+    if(pendientes>0)counterEl.textContent=pendientes+' de '+total+' pendiente'+(pendientes>1?'s':'');
+    else counterEl.textContent='al d\u00eda \u2713';
+  }
   var html='';
   for(var s=0;s<shown.length;s++){
     var c=shown[s].card,d=shown[s].daysLeft,pf=shown[s].pagoFecha;

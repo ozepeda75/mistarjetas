@@ -82,7 +82,14 @@ body{
 .vt-btn.active{background:var(--color-background-primary);color:var(--color-text-primary);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 /* USAR HOY */
-.today-card{border-radius:14px;padding:1.4rem;margin-bottom:.75rem;position:relative;overflow:hidden;min-height:130px;background:linear-gradient(135deg,#085041 0%,#0F6E56 60%,#085041 100%)}
+.today-wrap{perspective:1000px;margin-bottom:.75rem;cursor:pointer}
+.today-inner{position:relative;width:100%;transform-style:preserve-3d;transition:transform .5s ease}
+.today-inner.flipped{transform:rotateY(180deg)}
+.today-card{border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;min-height:130px;background:linear-gradient(135deg,#085041 0%,#0F6E56 60%,#085041 100%);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.today-back{position:absolute;top:0;left:0;width:100%;min-height:130px;border-radius:14px;padding:1.2rem 1.4rem;background:linear-gradient(135deg,#085041 0%,#0F6E56 60%,#085041 100%);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);display:flex;flex-direction:column;gap:8px}
+.today-back-label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600;color:#5DCAA5}
+.today-back-notes{font-size:14px;color:#E1F5EE;line-height:1.6;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:120px}
+.today-back-hint{font-size:11px;color:rgba(157,225,203,.5);text-align:right;margin-top:auto}
 .today-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:600;color:#5DCAA5}
 .today-bank{font-size:26px;font-weight:500;line-height:1.2;color:#E1F5EE}
 .today-meta{font-size:14px;margin-top:6px;line-height:1.8;color:#9FE1CB}
@@ -323,12 +330,21 @@ body.compact-mode .alert-box{display:none!important}
     </div>
   </div>
 
-  <div class="today-card">
-    <div class="today-label">Usar hoy</div>
-    <div class="today-bank" id="today-bank">&#8212;</div>
-    <div class="today-meta" id="today-meta"></div>
-    <div class="badges-row" id="today-badges"></div>
-    <div class="network-logo-today" id="today-network"></div>
+  <div class="today-wrap" onclick="flipToday()">
+    <div class="today-inner" id="today-inner">
+      <div class="today-card">
+        <div class="today-label">Usar hoy</div>
+        <div class="today-bank" id="today-bank">&#8212;</div>
+        <div class="today-meta" id="today-meta"></div>
+        <div class="badges-row" id="today-badges"></div>
+        <div class="network-logo-today" id="today-network"></div>
+      </div>
+      <div class="today-back" id="today-back">
+        <div class="today-back-label">Notas</div>
+        <div class="today-back-notes" id="today-back-notes">&#8212;</div>
+        <div class="today-back-hint">&#8635; toca para volver</div>
+      </div>
+    </div>
   </div>
 
   <div class="alert-box" id="alert-box">
@@ -510,6 +526,7 @@ var dStr=diasNom[today.getDay()];dStr=dStr.charAt(0).toUpperCase()+dStr.slice(1)
 document.getElementById('header-date').textContent=dStr+', '+today.getDate()+' de '+mesesLargo[today.getMonth()]+' de '+today.getFullYear();
 
 var addOpen=false,legendOpen=false,memOpen=false,editingId=null,flipped={},memCellFlipped={};
+var alertOpen=localStorage.getItem('cc_alert_open')!=='false';
 var PAID_KEY='cc_paid_v1',todayMonth=today.getFullYear()+'-'+(today.getMonth()+1);
 var paidRaw=JSON.parse(localStorage.getItem(PAID_KEY)||'{}'),paid={};
 for(var k in paidRaw){if(paidRaw[k]===todayMonth)paid[k]=todayMonth;}
@@ -562,17 +579,44 @@ function importar(event){
   var file=event.target.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(e){
-    try{var data=JSON.parse(e.target.result);var imported=data.tarjetas||data;
-      if(!Array.isArray(imported)||!imported.length){showBackupMsg('Archivo inv\u00e1lido.',true);return;}
+    try{
+      // Limpiar BOM y espacios extra que agrega iOS/Safari
+      var raw=e.target.result.replace(/^\uFEFF/,'').trim();
+      var data=JSON.parse(raw);
+      var imported=data.tarjetas||data;
+      if(!imported){showBackupMsg('Archivo sin datos.',true);return;}
+      // Si viene como objeto con una sola tarjeta (no array)
+      if(!Array.isArray(imported))imported=[imported];
+      if(!imported.length){showBackupMsg('El archivo est\u00e1 vac\u00edo.',true);return;}
+      // Validar que al menos el primer item tenga campo bank o corte
+      if(!imported[0].bank&&!imported[0].corte){showBackupMsg('Formato de archivo incorrecto.',true);return;}
       if(!confirm('Reemplazar con '+imported.length+' tarjeta(s)? \u00bfContinuar?'))return;
       cards=imported.map(function(c){return Object.assign({network:'',notes:'',promos:'',financiamiento:'',membresia:'',mesCargo:'',mesPago:'',lealtad:'',extranjero:''},c);});
       save();render();showBackupMsg(imported.length+' tarjeta(s) importada(s).',false);
-    }catch(err){showBackupMsg('Error al leer el archivo.',true);}
-  };reader.readAsText(file);event.target.value='';
+    }catch(err){
+      showBackupMsg('Error: '+err.message,true);
+    }
+  };
+  reader.onerror=function(){showBackupMsg('No se pudo leer el archivo.',true);};
+  reader.readAsText(file,'UTF-8');
+  event.target.value='';
 }
 function showBackupMsg(t,e){var el=document.getElementById('backup-msg');el.textContent=t;el.className='backup-msg'+(e?' error':'');el.style.display='block';setTimeout(function(){el.style.display='none';},4000);}
 
-var alertOpen=localStorage.getItem('cc_alert_open')!=='false';
+var todayFlipped=false;
+function flipToday(){
+  todayFlipped=!todayFlipped;
+  var inner=document.getElementById('today-inner');
+  if(inner)inner.className='today-inner'+(todayFlipped?' flipped':'');
+  syncTodayHeight();
+}
+function syncTodayHeight(){
+  var inner=document.getElementById('today-inner');
+  var front=inner&&inner.querySelector('.today-card');
+  var back=document.getElementById('today-back');
+  if(!inner||!front||!back)return;
+  inner.style.height=(todayFlipped?Math.max(back.scrollHeight,130):Math.max(front.scrollHeight,130))+'px';
+}
 function toggleAlert(){
   alertOpen=!alertOpen;
   localStorage.setItem('cc_alert_open',alertOpen);
@@ -802,6 +846,14 @@ function render(){
   document.getElementById('today-network').innerHTML=networkLogoHTML(b.network,'theme-black');
   var cp=colors[urgCorte(b.daysToCorte)],pp=colors[urgPago(b.daysToPago)];
   document.getElementById('today-badges').innerHTML='<span class="badge" style="background:'+cp.bg+';color:'+cp.txt+'">Corte en '+b.daysToCorte+'d</span><span class="badge" style="background:'+pp.bg+';color:'+pp.txt+'">Pago en '+b.daysToPago+'d</span>';
+  // Notas del reverso
+  var notesEl=document.getElementById('today-back-notes');
+  if(notesEl)notesEl.innerHTML=b.notes?b.notes.replace(/\n/g,'<br>'):'<span style="opacity:.5;font-style:italic">Sin notas</span>';
+  // Resetear flip y sincronizar altura
+  todayFlipped=false;
+  var inner=document.getElementById('today-inner');
+  if(inner){inner.className='today-inner';inner.style.height='';}
+  setTimeout(syncTodayHeight,50);
 
   var html='';
   for(var i=0;i<list.length;i++){

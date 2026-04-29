@@ -151,6 +151,7 @@ body{
 .flip-front{width:100%;min-height:130px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:16px 16px 14px;border:0.5px solid transparent;display:flex;flex-direction:column;gap:10px}
 .flip-back{position:absolute;top:0;left:0;width:100%;min-height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:16px 16px 14px;border:0.5px solid transparent;display:flex;flex-direction:column;gap:0;transform:rotateY(180deg)}
 .theme-default .flip-front,.theme-default .flip-back{background:var(--color-background-primary);border-color:var(--color-border-tertiary)}
+.theme-indigo .flip-front,.theme-indigo .flip-back{background:linear-gradient(135deg,#0a0a3a 0%,#1a1a7a 60%,#080828 100%);border-color:#2a2a8a}
 .theme-platinum .flip-front,.theme-platinum .flip-back{background:linear-gradient(135deg,#C8C8C8 0%,#E8E8E8 40%,#A8A8A8 100%);border-color:#999}
 .theme-black .flip-front,.theme-black .flip-back{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 50%,#111 100%);border-color:#444}
 .theme-amex .flip-front,.theme-amex .flip-back{background:linear-gradient(135deg,#1a4a8a 0%,#2563b0 50%,#0f3068 100%);border-color:#2563b0}
@@ -162,6 +163,7 @@ body{
 .btn-icon{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:6px;line-height:1;opacity:.75}
 .btn-icon:active{opacity:1}
 .theme-default .btn-icon{color:var(--color-text-secondary)}
+.theme-indigo .btn-icon{color:#fff}
 .theme-platinum .btn-icon{color:#333}
 .theme-black .btn-icon,.theme-amex .btn-icon{color:#fff}
 .card-semaforos{display:flex;gap:6px;flex-wrap:wrap}
@@ -181,6 +183,7 @@ body{
 .back-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .back-row-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .theme-default .back-label{color:var(--color-text-secondary)}.theme-default .back-value{color:var(--color-text-primary)}.theme-default .back-divider{background:var(--color-text-primary)}.theme-default .back-hint{color:var(--color-text-tertiary)}
+.theme-indigo .back-label{color:rgba(255,255,255,.55)}.theme-indigo .back-value{color:#fff}.theme-indigo .back-divider{background:#fff}.theme-indigo .back-hint{color:rgba(255,255,255,.35)}
 .theme-platinum .back-label{color:#555}.theme-platinum .back-value{color:#1a1a1a}.theme-platinum .back-divider{background:#555}.theme-platinum .back-hint{color:#666}
 .theme-black .back-label,.theme-amex .back-label{color:rgba(255,255,255,.55)}.theme-black .back-value,.theme-amex .back-value{color:#fff}.theme-black .back-divider,.theme-amex .back-divider{background:#fff}.theme-black .back-hint,.theme-amex .back-hint{color:rgba(255,255,255,.35)}
 
@@ -452,8 +455,8 @@ body.compact-mode .alert-box{display:none!important}
           </div>
           <div class="leg-group">
             <div class="leg-lbl">Pago</div>
-            <span class="leg"><span class="dot" style="background:#1D9E75"></span>+40 d&#237;as</span>
-            <span class="leg"><span class="dot" style="background:#EF9F27"></span>30-40 d&#237;as</span>
+            <span class="leg"><span class="dot" style="background:#1D9E75"></span>+45 d&#237;as</span>
+            <span class="leg"><span class="dot" style="background:#EF9F27"></span>30-45 d&#237;as</span>
             <span class="leg"><span class="dot" style="background:#E24B4A"></span>-30 d&#237;as</span>
           </div>
         </div>
@@ -529,8 +532,19 @@ var addOpen=false,legendOpen=false,memOpen=false,editingId=null,flipped={},memCe
 var alertOpen=localStorage.getItem('cc_alert_open')!=='false';
 var PAID_KEY='cc_paid_v1',todayMonth=today.getFullYear()+'-'+(today.getMonth()+1);
 var paidRaw=JSON.parse(localStorage.getItem(PAID_KEY)||'{}'),paid={};
-for(var k in paidRaw){if(paidRaw[k]===todayMonth)paid[k]=todayMonth;}
+// Solo conservar pagos cuya clave de mes coincide con el mes actual o futuro
+for(var k in paidRaw){
+  var parts=paidRaw[k].split('-');// formato "YYYY-M-cardId" o "YYYY-M"
+  var py=parseInt(parts[0]),pm=parseInt(parts[1]);
+  var ty=today.getFullYear(),tm=today.getMonth()+1;
+  // Mantener si el mes del pago es igual o posterior al mes actual
+  if(py>ty||(py===ty&&pm>=tm))paid[k]=paidRaw[k];
+}
 function savePaid(){localStorage.setItem(PAID_KEY,JSON.stringify(paid));}
+function getPaidKey(cardId,pagoFecha){
+  // Clave única: cardId + año-mes del vencimiento
+  return String(cardId)+'_'+pagoFecha.getFullYear()+'-'+(pagoFecha.getMonth()+1);
+}
 
 function setView(v){
   localStorage.setItem('cc_view',v);
@@ -624,13 +638,19 @@ function toggleAlert(){
   if(alertOpen)box.classList.add('open');
   else box.classList.remove('open');
 }
-function togglePaid(id){var k=String(id);if(paid[k])delete paid[k];else paid[k]=todayMonth;savePaid();renderAlert(lastList);}
+function togglePaid(cardId,pagoFechaStr){
+  var pf=new Date(pagoFechaStr);
+  var k=getPaidKey(cardId,pf);
+  if(paid[k])delete paid[k];
+  else paid[k]=pf.getFullYear()+'-'+(pf.getMonth()+1);
+  savePaid();renderAlert(lastList);
+}
 function resetPaid(){paid={};savePaid();renderAlert(lastList);}
 
-function getTheme(n){n=n.toLowerCase();if(n.indexOf('infinite')>=0||n.indexOf('black')>=0||n.indexOf('signature')>=0)return 'theme-black';if(n.indexOf('platinum')>=0)return 'theme-platinum';if(n.indexOf('amex')>=0)return 'theme-amex';return 'theme-default';}
-function getThemeBarColor(t){if(t==='theme-black')return '#2d2d2d';if(t==='theme-platinum')return '#A8A8A8';if(t==='theme-amex')return '#2563b0';return 'var(--color-border-secondary)';}
-var themeBgCSS={'theme-default':'var(--color-background-secondary)','theme-platinum':'linear-gradient(135deg,#C8C8C8 0%,#E8E8E8 40%,#A8A8A8 100%)','theme-black':'linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 50%,#111 100%)','theme-amex':'linear-gradient(135deg,#1a4a8a 0%,#2563b0 50%,#0f3068 100%)'};
-var textByTheme={'theme-default':{bank:'var(--color-text-primary)',dates:'var(--color-text-secondary)'},'theme-platinum':{bank:'#1a1a1a',dates:'#444'},'theme-black':{bank:'#fff',dates:'rgba(255,255,255,.7)'},'theme-amex':{bank:'#fff',dates:'rgba(255,255,255,.7)'}};
+function getTheme(n){n=n.toLowerCase();if(n.indexOf('infinite')>=0||n.indexOf('black')>=0||n.indexOf('signature')>=0)return 'theme-black';if(n.indexOf('platinum')>=0)return 'theme-platinum';if(n.indexOf('amex')>=0)return 'theme-amex';return 'theme-indigo';}
+function getThemeBarColor(t){if(t==='theme-black')return '#2d2d2d';if(t==='theme-platinum')return '#A8A8A8';if(t==='theme-amex')return '#2563b0';return '#1a1a7a';}
+var themeBgCSS={'theme-indigo':'linear-gradient(135deg,#0a0a3a 0%,#1a1a7a 60%,#080828 100%)','theme-platinum':'linear-gradient(135deg,#C8C8C8 0%,#E8E8E8 40%,#A8A8A8 100%)','theme-black':'linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 50%,#111 100%)','theme-amex':'linear-gradient(135deg,#1a4a8a 0%,#2563b0 50%,#0f3068 100%)'};
+var textByTheme={'theme-indigo':{bank:'#fff',dates:'rgba(255,255,255,.7)'},'theme-platinum':{bank:'#1a1a1a',dates:'#444'},'theme-black':{bank:'#fff',dates:'rgba(255,255,255,.7)'},'theme-amex':{bank:'#fff',dates:'rgba(255,255,255,.7)'}};
 
 function networkLogoHTML(net,theme){
   var dark=theme==='theme-black'||theme==='theme-amex';
@@ -660,9 +680,9 @@ function calcAlertDays(pagoDay){
 }
 function fmt(dia,mes){return dia+' '+meses[mes];}
 function urgCorte(d){return d>20?'g':d>=10?'y':'r';}
-function urgPago(d){return d>40?'g':d>=30?'y':'r';}
+function urgPago(d){return d>45?'g':d>=30?'y':'r';}
 var colors={g:{bg:'#1D9E75',txt:'#E1F5EE'},y:{bg:'#BA7517',txt:'#FAEEDA'},r:{bg:'#A32D2D',txt:'#FCEBEB'}};
-function starColor(t){if(t==='theme-platinum')return '#777';if(t==='theme-black'||t==='theme-amex')return 'rgba(255,255,255,.85)';return '#1D9E75';}
+function starColor(t){if(t==='theme-platinum')return '#777';if(t==='theme-black'||t==='theme-amex'||t==='theme-indigo')return 'rgba(255,255,255,.85)';return '#1D9E75';}
 
 function flipCard(id,event){
   if(event.target.closest('.card-actions'))return;
@@ -697,15 +717,16 @@ function renderAlert(list){
   for(var i=0;i<list.length;i++){var r=calcAlertDays(list[i].pago);if(r)candidates.push({card:list[i],daysLeft:r.days,pagoFecha:r.pagoFecha});}
   candidates.sort(function(a,b){return a.daysLeft-b.daysLeft;});
   var notPaid=[],isPaid=[];
-  for(var j=0;j<candidates.length;j++){if(paid[String(candidates[j].card.id)])isPaid.push(candidates[j]);else notPaid.push(candidates[j]);}
-  // Mostrar todas: pendientes primero, pagadas al final
+  for(var j=0;j<candidates.length;j++){
+    var pk=getPaidKey(candidates[j].card.id,candidates[j].pagoFecha);
+    if(paid[pk])isPaid.push(candidates[j]);else notPaid.push(candidates[j]);
+  }
   var shown=notPaid.concat(isPaid);
   var box=document.getElementById('alert-box');
   var itemsEl=document.getElementById('alert-items');
   var counterEl=document.getElementById('alert-counter');
   if(!shown.length){box.className='alert-box';return;}
   box.className='alert-box visible'+(alertOpen?' open':'');
-  // Contador: pendientes / total
   var pendientes=notPaid.length,total=shown.length;
   if(counterEl){
     if(pendientes>0)counterEl.textContent=pendientes+' de '+total+' pendiente'+(pendientes>1?'s':'');
@@ -714,10 +735,12 @@ function renderAlert(list){
   var html='';
   for(var s=0;s<shown.length;s++){
     var c=shown[s].card,d=shown[s].daysLeft,pf=shown[s].pagoFecha;
-    var isPaidItem=!!paid[String(c.id)];
+    var pk2=getPaidKey(c.id,pf);
+    var isPaidItem=!!paid[pk2];
+    var pfStr=pf.toISOString();
     var barPct=Math.round(d/30*100),barColor=d<=3?'#E24B4A':d<=10?'#EF9F27':'#378ADD';
     html+='<div class="alert-item'+(isPaidItem?' paid':'')+'">'
-      +'<button class="alert-check'+(isPaidItem?' checked':'')+'" onclick="togglePaid('+c.id+')">'
+      +'<button class="alert-check'+(isPaidItem?' checked':'')+'" onclick="togglePaid('+c.id+',\''+pfStr+'\')">'
       +'<span class="check-icon">&#10003;</span></button>'
       +'<div class="alert-item-left"><div class="alert-item-name">'+c.bank+'</div>'
       +'<div class="alert-item-date">Pago: '+fmt(pf.getDate(),pf.getMonth())+'</div>'
@@ -860,7 +883,7 @@ function render(){
     var c=list[i],uc=urgCorte(c.daysToCorte),up=urgPago(c.daysToPago);
     var cc=colors[uc],pc=colors[up],th=getTheme(c.bank),ttt=textByTheme[th];
     var star=(c.daysToPago>=50)?'<span class="star" style="color:'+starColor(th)+'">&#9733;</span>':'';
-    var flipCol=th==='theme-default'?'var(--color-text-tertiary)':'rgba(255,255,255,.25)';
+    var flipCol=(th==='theme-default')?'var(--color-text-tertiary)':'rgba(255,255,255,.25)';
     html+='<div class="card-wrapper">'
       +'<div class="flip-wrapper '+th+'" id="flip-wrapper-'+c.id+'" onclick="flipCard('+c.id+',event)" style="position:relative">'
       +'<div class="flip-inner'+(flipped[c.id]?' flipped':'')+'" id="flip-inner-'+c.id+'">'

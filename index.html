@@ -450,14 +450,14 @@ body.compact-mode .alert-box{display:none!important}
           <div class="leg-group">
             <div class="leg-lbl">Corte</div>
             <span class="leg"><span class="dot" style="background:#1D9E75"></span>+20 d&#237;as</span>
-            <span class="leg"><span class="dot" style="background:#EF9F27"></span>10-20 d&#237;as</span>
-            <span class="leg"><span class="dot" style="background:#E24B4A"></span>-10 d&#237;as</span>
+            <span class="leg"><span class="dot" style="background:#EF9F27"></span>11-19 d&#237;as</span>
+            <span class="leg"><span class="dot" style="background:#E24B4A"></span>10 o menos</span>
           </div>
           <div class="leg-group">
             <div class="leg-lbl">Pago</div>
             <span class="leg"><span class="dot" style="background:#1D9E75"></span>+45 d&#237;as</span>
-            <span class="leg"><span class="dot" style="background:#EF9F27"></span>30-45 d&#237;as</span>
-            <span class="leg"><span class="dot" style="background:#E24B4A"></span>-30 d&#237;as</span>
+            <span class="leg"><span class="dot" style="background:#EF9F27"></span>31-44 d&#237;as</span>
+            <span class="leg"><span class="dot" style="background:#E24B4A"></span>30 o menos</span>
           </div>
         </div>
       </div>
@@ -679,8 +679,8 @@ function calcAlertDays(pagoDay){
   return null;
 }
 function fmt(dia,mes){return dia+' '+meses[mes];}
-function urgCorte(d){return d>20?'g':d>=10?'y':'r';}
-function urgPago(d){return d>45?'g':d>=30?'y':'r';}
+function urgCorte(d){return d>=20?'g':d>=11?'y':'r';}
+function urgPago(d){return d>=45?'g':d>=31?'y':'r';}
 var colors={g:{bg:'#1D9E75',txt:'#E1F5EE'},y:{bg:'#BA7517',txt:'#FAEEDA'},r:{bg:'#A32D2D',txt:'#FCEBEB'}};
 function starColor(t){if(t==='theme-platinum')return '#777';if(t==='theme-black'||t==='theme-amex'||t==='theme-indigo')return 'rgba(255,255,255,.85)';return '#1D9E75';}
 

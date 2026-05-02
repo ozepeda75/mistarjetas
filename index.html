@@ -137,6 +137,8 @@ body{
 .section-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .section-line{flex:1;height:0.5px;background:var(--color-border-tertiary)}
 .section-label{font-size:11px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.reset-flip-btn{background:none;border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.reset-flip-btn:active{background:var(--color-background-secondary)}
 .flip-hint{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-tertiary)}
 
 /* VISTA NORMAL — con espacio entre tarjetas */
@@ -370,6 +372,7 @@ body.compact-mode .alert-box{display:none!important}
   <div class="section-bar">
     <div class="section-label">Tus tarjetas</div>
     <div class="section-line"></div>
+    <button class="reset-flip-btn" id="reset-flip-btn" onclick="resetFlips()" style="display:none">&#8635; Restablecer</button>
     <div class="flip-hint normal-only"><span style="font-size:13px;opacity:.6">&#8635;</span><span>toca para voltear</span></div>
   </div>
 
@@ -684,12 +687,29 @@ function urgPago(d){return d>=45?'g':d>=31?'y':'r';}
 var colors={g:{bg:'#1D9E75',txt:'#E1F5EE'},y:{bg:'#BA7517',txt:'#FAEEDA'},r:{bg:'#A32D2D',txt:'#FCEBEB'}};
 function starColor(t){if(t==='theme-platinum')return '#777';if(t==='theme-black'||t==='theme-amex'||t==='theme-indigo')return 'rgba(255,255,255,.85)';return '#1D9E75';}
 
+function anyFlipped(){for(var id in flipped){if(flipped[id])return true;}return false;}
+function updateResetBtn(){
+  var btn=document.getElementById('reset-flip-btn');
+  if(btn)btn.style.display=anyFlipped()?'block':'none';
+}
+function resetFlips(){
+  for(var id in flipped){
+    if(flipped[id]){
+      flipped[id]=false;
+      var inner=document.getElementById('flip-inner-'+id);
+      if(inner)inner.className='flip-inner';
+      syncHeight(id);
+    }
+  }
+  updateResetBtn();
+}
 function flipCard(id,event){
   if(event.target.closest('.card-actions'))return;
   flipped[id]=!flipped[id];
   var inner=document.getElementById('flip-inner-'+id);
   if(inner)inner.className='flip-inner'+(flipped[id]?' flipped':'');
   syncHeight(id);
+  updateResetBtn();
 }
 function syncHeight(id){
   var inner=document.getElementById('flip-inner-'+id);
@@ -899,6 +919,7 @@ function render(){
   }
   el.innerHTML=html;
   for(var j=0;j<list.length;j++)syncHeight(list[j].id);
+  updateResetBtn();
 
   var chtml='';
   for(var k=0;k<list.length;k++){

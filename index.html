@@ -134,6 +134,14 @@ body{
 .alert-paid-label{font-size:11px;color:#1D9E75;font-weight:500}
 
 /* SECCIÓN */
+.search-bar{display:none;margin-bottom:12px;position:relative}
+.search-bar.visible{display:block}
+.search-input{width:100%;font-size:15px;padding:10px 14px 10px 36px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-family:inherit;-webkit-appearance:none}
+.search-input:focus{outline:none;border-color:#1D9E75}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--color-text-tertiary);pointer-events:none}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;color:var(--color-text-tertiary);cursor:pointer;padding:2px 6px;display:none;line-height:1}
+.search-clear.visible{display:block}
+.search-empty{text-align:center;padding:1.5rem;color:var(--color-text-tertiary);font-size:14px}
 .section-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .section-line{flex:1;height:0.5px;background:var(--color-border-tertiary)}
 .section-label{font-size:11px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
@@ -374,6 +382,12 @@ body.compact-mode .alert-box{display:none!important}
     <div class="section-line"></div>
     <button class="reset-flip-btn" id="reset-flip-btn" onclick="resetFlips()" style="display:none">&#8635; Restablecer</button>
     <div class="flip-hint normal-only"><span style="font-size:13px;opacity:.6">&#8635;</span><span>toca para voltear</span></div>
+  </div>
+
+  <div class="search-bar normal-only visible" id="search-bar">
+    <span class="search-icon">&#128269;</span>
+    <input class="search-input" id="search-input" type="text" placeholder="Buscar tarjeta..." inputmode="text" autocomplete="off" oninput="onSearch()">
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">&#215;</button>
   </div>
 
   <div class="compact-list" id="compact-list"></div>
@@ -620,7 +634,22 @@ function importar(event){
 }
 function showBackupMsg(t,e){var el=document.getElementById('backup-msg');el.textContent=t;el.className='backup-msg'+(e?' error':'');el.style.display='block';setTimeout(function(){el.style.display='none';},4000);}
 
-var todayFlipped=false;
+var searchQuery='';
+function onSearch(){
+  var inp=document.getElementById('search-input');
+  var clr=document.getElementById('search-clear');
+  searchQuery=inp?inp.value.trim().toLowerCase():'';
+  if(clr)clr.className='search-clear'+(searchQuery?' visible':'');
+  renderCards(lastList);
+}
+function clearSearch(){
+  var inp=document.getElementById('search-input');
+  var clr=document.getElementById('search-clear');
+  if(inp)inp.value='';
+  if(clr)clr.className='search-clear';
+  searchQuery='';
+  renderCards(lastList);
+}
 function flipToday(){
   todayFlipped=!todayFlipped;
   var inner=document.getElementById('today-inner');
@@ -873,6 +902,37 @@ function saveEdit(){
 }
 document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
+function renderCards(list){
+  var el=document.getElementById('cards-list');
+  if(!el)return;
+  var filtered=searchQuery?list.filter(function(c){return c.bank.toLowerCase().indexOf(searchQuery)>=0;}):list;
+  if(!filtered.length){
+    el.innerHTML='<div class="search-empty">'+(searchQuery?'Sin resultados para "'+searchQuery+'"':'Sin tarjetas. Agrega una abajo.')+'</div>';
+    updateResetBtn();return;
+  }
+  var html='';
+  for(var i=0;i<filtered.length;i++){
+    var c=filtered[i],uc=urgCorte(c.daysToCorte),up=urgPago(c.daysToPago);
+    var cc=colors[uc],pc=colors[up],th=getTheme(c.bank),ttt=textByTheme[th];
+    var star=(c.daysToPago>=50)?'<span class="star" style="color:'+starColor(th)+'">&#9733;</span>':'';
+    var flipCol=(th==='theme-default')?'var(--color-text-tertiary)':'rgba(255,255,255,.25)';
+    html+='<div class="card-wrapper">'
+      +'<div class="flip-wrapper '+th+'" id="flip-wrapper-'+c.id+'" onclick="flipCard('+c.id+',event)" style="position:relative">'
+      +'<div class="flip-inner'+(flipped[c.id]?' flipped':'')+'" id="flip-inner-'+c.id+'">'
+      +'<div class="flip-front '+th+'" id="flip-front-'+c.id+'">'
+      +'<div class="network-logo">'+networkLogoHTML(c.network,th)+'</div>'
+      +'<div class="card-top"><div class="card-name-vis" style="color:'+ttt.bank+'"><span class="name-text">'+c.bank+'</span>'+star+'</div>'
+      +'<div class="card-actions"><button class="btn-icon" onclick="openModal('+c.id+')">&#9998;</button><button class="btn-icon" onclick="delCard('+c.id+')">&#215;</button></div></div>'
+      +'<div class="card-semaforos"><span class="mini-badge" style="background:'+cc.bg+';color:'+cc.txt+'">Corte '+c.daysToCorte+'d</span><span class="mini-badge" style="background:'+pc.bg+';color:'+pc.txt+'">Pago '+c.daysToPago+'d</span></div>'
+      +'<div class="card-bottom"><div class="card-dates-vis" style="color:'+ttt.dates+'">Corte d\u00eda '+c.corte+' ('+fmt(c.corteDay,c.corteMes)+')<br>Pago d\u00eda '+c.pago+' ('+fmt(c.pagoDay,c.pagoMes)+')</div>'
+      +'<span style="font-size:18px;opacity:.2;color:'+flipCol+'">&#8635;</span></div></div>'
+      +'<div class="flip-back '+th+'" id="flip-back-'+c.id+'">'+backHTML(c)+'</div>'
+      +'</div></div></div>';
+  }
+  el.innerHTML=html;
+  for(var j=0;j<filtered.length;j++)syncHeight(filtered[j].id);
+  updateResetBtn();
+}
 function render(){
   var list=cards.map(function(c){return Object.assign({},c,calc(c.corte,c.pago));});
   list.sort(function(a,b){return b.daysToPago-a.daysToPago;});
@@ -898,35 +958,14 @@ function render(){
   if(inner){inner.className='today-inner';inner.style.height='';}
   setTimeout(syncTodayHeight,50);
 
-  var html='';
-  for(var i=0;i<list.length;i++){
-    var c=list[i],uc=urgCorte(c.daysToCorte),up=urgPago(c.daysToPago);
-    var cc=colors[uc],pc=colors[up],th=getTheme(c.bank),ttt=textByTheme[th];
-    var star=(c.daysToPago>=50)?'<span class="star" style="color:'+starColor(th)+'">&#9733;</span>':'';
-    var flipCol=(th==='theme-default')?'var(--color-text-tertiary)':'rgba(255,255,255,.25)';
-    html+='<div class="card-wrapper">'
-      +'<div class="flip-wrapper '+th+'" id="flip-wrapper-'+c.id+'" onclick="flipCard('+c.id+',event)" style="position:relative">'
-      +'<div class="flip-inner'+(flipped[c.id]?' flipped':'')+'" id="flip-inner-'+c.id+'">'
-      +'<div class="flip-front '+th+'" id="flip-front-'+c.id+'">'
-      +'<div class="network-logo">'+networkLogoHTML(c.network,th)+'</div>'
-      +'<div class="card-top"><div class="card-name-vis" style="color:'+ttt.bank+'"><span class="name-text">'+c.bank+'</span>'+star+'</div>'
-      +'<div class="card-actions"><button class="btn-icon" onclick="openModal('+c.id+')">&#9998;</button><button class="btn-icon" onclick="delCard('+c.id+')">&#215;</button></div></div>'
-      +'<div class="card-semaforos"><span class="mini-badge" style="background:'+cc.bg+';color:'+cc.txt+'">Corte '+c.daysToCorte+'d</span><span class="mini-badge" style="background:'+pc.bg+';color:'+pc.txt+'">Pago '+c.daysToPago+'d</span></div>'
-      +'<div class="card-bottom"><div class="card-dates-vis" style="color:'+ttt.dates+'">Corte d\u00eda '+c.corte+' ('+fmt(c.corteDay,c.corteMes)+')<br>Pago d\u00eda '+c.pago+' ('+fmt(c.pagoDay,c.pagoMes)+')</div>'
-      +'<span style="font-size:18px;opacity:.2;color:'+flipCol+'">&#8635;</span></div></div>'
-      +'<div class="flip-back '+th+'" id="flip-back-'+c.id+'">'+backHTML(c)+'</div>'
-      +'</div></div></div>';
-  }
-  el.innerHTML=html;
-  for(var j=0;j<list.length;j++)syncHeight(list[j].id);
-  updateResetBtn();
+  lastList=list;
+  renderCards(list);
 
   var chtml='';
   for(var k=0;k<list.length;k++){
     var c=list[k],uc2=urgCorte(c.daysToCorte),up2=urgPago(c.daysToPago);
     var cc2=colors[uc2],pc2=colors[up2],th2=getTheme(c.bank);
     var star2=(c.daysToPago>=50)?'\u2605 ':'';
-    // Solo mostrar fecha de pago en la sublínea (más compacto)
     chtml+='<div class="compact-item">'
       +'<div class="compact-theme-bar" style="background:'+getThemeBarColor(th2)+'"></div>'
       +'<div class="compact-info">'

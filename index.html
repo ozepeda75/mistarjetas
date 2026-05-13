@@ -175,7 +175,7 @@ body{
 .theme-default .btn-icon{color:var(--color-text-secondary)}
 .theme-indigo .btn-icon{color:#fff}
 .theme-platinum .btn-icon{color:#333}
-.theme-black .btn-icon,.theme-amex .btn-icon{color:#fff}
+.theme-black .btn-icon,.theme-amex .btn-icon,.theme-indigo .btn-icon{color:#fff}
 .card-semaforos{display:flex;gap:6px;flex-wrap:wrap}
 .mini-badge{font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px}
 .card-bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end}
@@ -211,7 +211,7 @@ body{
 .theme-default .back-label{color:var(--color-text-secondary)}.theme-default .back-value{color:var(--color-text-primary)}.theme-default .back-divider{background:var(--color-text-primary)}.theme-default .back-hint{color:var(--color-text-tertiary)}
 .theme-indigo .back-label{color:rgba(255,255,255,.55)}.theme-indigo .back-value{color:#fff}.theme-indigo .back-divider{background:#fff}.theme-indigo .back-hint{color:rgba(255,255,255,.35)}
 .theme-platinum .back-label{color:#555}.theme-platinum .back-value{color:#1a1a1a}.theme-platinum .back-divider{background:#555}.theme-platinum .back-hint{color:#666}
-.theme-black .back-label,.theme-amex .back-label{color:rgba(255,255,255,.55)}.theme-black .back-value,.theme-amex .back-value{color:#fff}.theme-black .back-divider,.theme-amex .back-divider{background:#fff}.theme-black .back-hint,.theme-amex .back-hint{color:rgba(255,255,255,.35)}
+.theme-black .back-label,.theme-amex .back-label,.theme-indigo .back-label{color:rgba(255,255,255,.55)}.theme-black .back-value,.theme-amex .back-value,.theme-indigo .back-value{color:#fff}.theme-black .back-divider,.theme-amex .back-divider,.theme-indigo .back-divider{background:#fff}.theme-black .back-hint,.theme-amex .back-hint,.theme-indigo .back-hint{color:rgba(255,255,255,.35)}
 
 /* VISTA COMPACTA */
 .compact-list{display:none;flex-direction:column;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
@@ -704,7 +704,7 @@ var themeBgCSS={'theme-indigo':'linear-gradient(135deg,#0a0a3a 0%,#1a1a7a 60%,#0
 var textByTheme={'theme-indigo':{bank:'#fff',dates:'rgba(255,255,255,.7)'},'theme-platinum':{bank:'#1a1a1a',dates:'#444'},'theme-black':{bank:'#fff',dates:'rgba(255,255,255,.7)'},'theme-amex':{bank:'#fff',dates:'rgba(255,255,255,.7)'}};
 
 function networkLogoHTML(net,theme){
-  var dark=theme==='theme-black'||theme==='theme-amex';
+  var dark=theme==='theme-black'||theme==='theme-amex'||theme==='theme-indigo';
   if(net==='visa'){var col=dark?'rgba(255,255,255,.85)':'#1a1f71';return '<span style="font-size:17px;font-weight:800;font-style:italic;letter-spacing:-.5px;color:'+col+'">VISA</span>';}
   if(net==='mastercard'){var c1=dark?'rgba(235,100,80,.9)':'#EB001B',c2=dark?'rgba(255,180,60,.9)':'#F79E1B';return '<svg width="38" height="24" viewBox="0 0 38 24"><circle cx="14" cy="12" r="10" fill="'+c1+'"/><circle cx="24" cy="12" r="10" fill="'+c2+'"/><ellipse cx="19" cy="12" rx="4.5" ry="10" fill="'+(dark?'rgba(200,100,50,.7)':'#FF5F00')+'" opacity=".85"/></svg>';}
   if(net==='amex'){var c=dark?'rgba(255,255,255,.85)':'#016FD0';return '<span style="font-size:12px;font-weight:700;letter-spacing:.8px;color:'+c+'">AMEX</span>';}

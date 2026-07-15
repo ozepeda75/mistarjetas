@@ -276,8 +276,20 @@ body.compact-mode .alert-box{display:none!important}
 .afield input:focus,.afield select:focus,.afield textarea:focus{outline:none;border-color:#1D9E75}
 .arow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .notes-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.a-section-label{font-size:11px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;margin-bottom:-4px}
-.btn-add{width:100%;background:#1D9E75;border:none;border-radius:var(--border-radius-md);padding:13px;font-size:15px;color:#E1F5EE;cursor:pointer;font-weight:600;margin-top:4px}
+.porc-row{display:none;margin-top:8px}
+.porc-row.visible{display:flex;align-items:center;gap:8px}
+.porc-row label{font-size:12px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.porc-input{font-size:15px;padding:9px 12px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:90px;font-family:inherit;-webkit-appearance:none}
+.porc-input:focus{outline:none;border-color:#1D9E75}
+.porc-pct{font-size:15px;color:var(--color-text-secondary);font-weight:500}
+/* Modal */
+.mporc-row{display:none;margin-top:8px}
+.mporc-row.visible{display:flex;align-items:center;gap:8px}
+.mporc-row label{font-size:12px;font-weight:600;color:#fff;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.mporc-input{font-size:15px;padding:9px 12px;border-radius:var(--border-radius-md);border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;width:90px;font-family:inherit;-webkit-appearance:none}
+.mporc-input:focus{outline:none;border-color:rgba(255,255,255,.7)}
+.mporc-pct{font-size:15px;color:rgba(255,255,255,.6);font-weight:500}
+.a-section-label{font-size:11px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;margin-bottom:-4px}border:none;border-radius:var(--border-radius-md);padding:13px;font-size:15px;color:#E1F5EE;cursor:pointer;font-weight:600;margin-top:4px}
 .btn-add:active{opacity:.85}
 .form-msg{font-size:13px;color:#A32D2D}
 
@@ -437,7 +449,7 @@ body.compact-mode .alert-box{display:none!important}
         </div>
         <div class="afield"><label>Red de pago</label><select id="inp-network"></select></div>
         <div class="a-section-label">Membres&#237;a</div>
-        <div class="afield"><label>Tipo</label><select id="inp-membresia"></select></div>
+        <div class="afield"><label>Membres&#237;a</label><input type="text" id="inp-membresia" placeholder="Ej: Reversi&#243;n 35%, Vitalicia..." autocomplete="off"></div>
         <div class="arow2">
           <div class="afield"><label>Mes de cargo</label><select id="inp-mes-cargo"></select></div>
           <div class="afield"><label>Mes de pago</label><select id="inp-mes-pago"></select></div>
@@ -517,7 +529,7 @@ body.compact-mode .alert-box{display:none!important}
     </div>
     <div class="modal-section-label">Membres&#237;a</div>
     <div class="field-group">
-      <div class="mfield"><label>Tipo</label><select id="edit-membresia"></select></div>
+      <div class="mfield"><label>Membres&#237;a</label><input type="text" id="edit-membresia" placeholder="Ej: Reversi&#243;n 35%, Vitalicia..." autocomplete="off"></div>
       <div class="mrow2">
         <div class="mfield"><label>Mes de cargo</label><select id="edit-mes-cargo"></select></div>
         <div class="mfield"><label>Mes de pago</label><select id="edit-mes-pago"></select></div>
@@ -541,7 +553,6 @@ body.compact-mode .alert-box{display:none!important}
 
 <script>
 var OPT_NETWORK=['','Visa','Mastercard','American Express'],OPT_NETWORK_VALS=['','visa','mastercard','amex'];
-var OPT_MEMBRESIA=['','Mensual','Vitalicia','Reversi\u00f3n 25%','Reversi\u00f3n 50%','Reversi\u00f3n 75%','Reversi\u00f3n 100%','Gratis 1er A\u00f1o','No hubo reversi\u00f3n'];
 var OPT_MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 var OPT_LEALTAD=['','CashBack','LifeMiles','CashBack / Puntos','Puntos'];
 var OPT_EXTRANJERO=['','Lempiras','D\u00f3lares'];
@@ -549,7 +560,6 @@ var MESES_SHORT=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','No
 
 function fillSelect(id,opts,vals){var el=document.getElementById(id);if(!el)return;var h='',v=vals||opts;for(var i=0;i<opts.length;i++)h+='<option value="'+v[i]+'">'+opts[i]+'</option>';el.innerHTML=h;}
 ['inp-network','edit-network'].forEach(function(id){fillSelect(id,OPT_NETWORK,OPT_NETWORK_VALS);});
-['inp-membresia','edit-membresia'].forEach(function(id){fillSelect(id,OPT_MEMBRESIA);});
 ['inp-mes-cargo','edit-mes-cargo','inp-mes-pago','edit-mes-pago'].forEach(function(id){fillSelect(id,OPT_MESES);});
 ['inp-lealtad','edit-lealtad'].forEach(function(id){fillSelect(id,OPT_LEALTAD);});
 ['inp-extranjero','edit-extranjero'].forEach(function(id){fillSelect(id,OPT_EXTRANJERO);});
